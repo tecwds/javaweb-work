@@ -23,6 +23,25 @@
 4. 验证请求头信息。
 5. 使用 `Https` 协议。
 
+```java
+Session session = req.getSession();
+
+// 设置 Cookie
+Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
+
+// 防御 XSS
+sessionCookie.setHttpOnly(true);
+
+// 通过 HTTPS 发送
+sessionCookie.setSecure(true);
+
+resp.addCookie(sessionCookie);
+
+// 设置会话超时时间
+session.setMaxInactiveInterval(30 * 60); // 30min
+
+```
+
 ## 2. 跨站脚本攻击（XSS）和防御
 
 攻击者在目标网站中注入恶意脚本，普通用户访问这个网站的时候，脚本被执行，导致用户的会话信息被窃取。
@@ -50,7 +69,6 @@
 2. 对用户输入进行过滤。
 3. 前端代码和数据分离。
 4. 字符转义，防止部分XSS攻击。
-
 
 ## 3. 跨战请求伪造（CSRF）和防御
 
@@ -128,6 +146,52 @@ HTTP 协议是无状态的，它没有状态保持机制，无法实现会话状
 
 Java提供了一个接口，`java.io.Serializable`，这个接口用于标识一个对象可以被序列化。
 
+**例如：**
+
+```java
+package entity;
+
+import java.io.Serializable;
+
+public class UserInfo implements Serializable {
+    private String username;
+    private String password;
+    private String email;
+}
+```
+
 ## 4. 自定义序列化策略
 
 实现 `Externalizable` 接口，重写 `writeExternal` 和 `readExternal` 方法，定制化对象的序列化和反序列化过程
+
+**例如：**
+
+```java
+package entity;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+public class UserInfoV2 implements Externalizable {
+    private String username;
+    private String password;
+    private String email;
+
+    @Override
+    public void writeExternal(ObjectOutput objectOutput) throws IOException {
+        objectOutput.writeObject(username);
+        objectOutput.writeObject(password);
+        objectOutput.writeObject(email);
+    }
+
+    @Override
+    public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        username = (String) objectInput.readObject();
+        password = (String) objectInput.readObject();
+        email = (String) objectInput.readObject();
+    }
+}
+
+```
